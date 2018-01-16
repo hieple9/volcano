@@ -91,7 +91,7 @@ def read_data2(file_reader, sensor=None, multiclass=False, exclude=None, dim=100
         return np.array(new_dim100), np.array(new_labels), np.array(new_dim59)
 
 
-def read_data(file_reader, sensor=None, multiclass=False, exclude=None, dim=100, pre=False):
+def read_data(file_reader, sensor=None, multiclass=False, exclude=None, num_steps=1, dim=100, pre=False):
     """
     Return the data of a specific sensor, if sensor is None, return all sensors
     """
@@ -119,18 +119,18 @@ def read_data(file_reader, sensor=None, multiclass=False, exclude=None, dim=100,
     print "Total", len(labels)
     print "Class 1", sum(labels)
     if sensor is None:
-        energies = np.array([np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.energy])
+        energies = np.array([np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.energy])
         maximum_amplitudes = np.array(
-            [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.maximum_amplitude])
+            [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.maximum_amplitude])
         radial_strains = np.array(
-            [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.radial_strain])
+            [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.radial_strain])
         tangential_strains = np.array(
-            [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.tangential_strain])
+            [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.tangential_strain])
 
         return energies, maximum_amplitudes, radial_strains, tangential_strains, labels
     else:
         return np.array(
-            [np.fromstring(e, dtype=float, sep=',').reshape(dim, 1) for e in file_reader[sensor]]), labels
+            [np.fromstring(e, dtype=float, sep=',').reshape(num_steps, dim) for e in file_reader[sensor]]), labels
 
 
 """
