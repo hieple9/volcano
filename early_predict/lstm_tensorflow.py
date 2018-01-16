@@ -1,7 +1,10 @@
 import tensorflow as tf
-from utils import utils
 import pandas as pd
 import random
+
+import sys
+sys.path.append("../")
+from utils import utils
 
 tf.reset_default_graph()
 lstm_graph = tf.Graph()
