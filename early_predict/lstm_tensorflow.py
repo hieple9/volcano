@@ -43,7 +43,7 @@ with lstm_graph.as_default():
     last_output = tf.gather(val, int(val.get_shape()[0])-1, name="last_lstm_output")
 
     weight = tf.Variable(tf.truncated_normal([config.lstm_size, config.output_size]))
-    bias = tf.Variable(tf.constant(0.1, shape=[config.lstm_size]))
+    bias = tf.Variable(tf.constant(0.1, shape=[config.output_size]))
     logits = tf.matmul(last_output, weight) + bias
 
     loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=targets, logits=logits)
