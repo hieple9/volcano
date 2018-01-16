@@ -2,11 +2,11 @@ import pandas as pd
 
 # test set: 25% each year 2013, 2014, 2015, 2016
 # test and validation: the rest
-first_half = ['2009_60_eruption', '2010_60_eruption', '2011_60_eruption', '2012_60_eruption']
-second_half = ['2013_60_eruption', '2014_60_eruption', '2015_60_eruption', '2016_60_eruption']
+first_half = ['2009_20_explosion', '2010_20_explosion', '2011_20_explosion', '2012_20_explosion']
+second_half = ['2013_20_explosion', '2014_20_explosion', '2015_20_explosion', '2016_20_explosion']
 
-test = 'test_60_eruption'
-training = 'training_60_eruption'
+test = 'test_20_explosion'
+training = 'training_20_explosion'
 
 list_test_training = []
 # for test and training

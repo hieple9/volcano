@@ -18,12 +18,15 @@ sensors = ['tangential_strain']
 batch_size = 1000
 filters = 128
 kernel_size = 5
-epochs = 20
-class_weight = 6
+epochs = 5
+class_weight = 15
 
 for sensor in sensors:
     print sensor
     training_reader = pd.read_csv(get_early_diff_path(training_set))
+    print len(training_reader)
+    training_reader = training_reader[training_reader.current_labels == 0]
+    print len(training_reader)
     train_data, train_labels = read_data(training_reader, sensor, pre=True)
     dim = train_data[0].shape
 
@@ -48,8 +51,8 @@ for sensor in sensors:
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
     model.add(Activation('relu'))
-    # model.add(Dropout(0.2))
-    # model.add(MaxPooling1D(2, 2))
+    model.add(Dropout(0.5))
+    model.add(MaxPooling1D(2, 2))
 
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
@@ -69,9 +72,8 @@ for sensor in sensors:
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
     model.add(Activation('relu'))
-    # model.add(Dropout(0.5))
-
-    # model.add(MaxPooling1D(2, 2))
+    model.add(Dropout(0.5))
+    model.add(MaxPooling1D(2, 2))
 
     model.add(Flatten())
     model.add(Dense(32, activation='relu'))
@@ -90,6 +92,20 @@ for sensor in sensors:
     original_classified = model.predict(np.array(train_data), batch_size=batch_size, verbose=0)
     best_threshold = find_best_threshold(train_labels, original_classified)
     classified = [get_class(x, best_threshold) for x in original_classified]
+
+    # Check current label
+    current_check = []
+    current_labels = training_reader.current_labels.values
+    for index, value in enumerate(classified):
+        if value + train_labels[index] == 2:
+            current = current_labels[index]
+            if current >= 1:
+                current_check.append(1)
+            else:
+                current_check.append(0)
+    print "current_check", len(current_check)
+    print "sum", sum(current_check)
+    print "len", len([x for x in current_check if x != 0])
 
     def time_show(dtime):
         arr = []
@@ -125,7 +141,30 @@ for sensor in sensors:
         for test in test_sets:
             print test
             test_reader = pd.read_csv(get_early_diff_path(test))
+            print len(test_reader)
+            test_reader = test_reader[test_reader.current_labels == 0]
+            print len(test_reader)
             test_data, test_labels = read_data(test_reader, sensor, pre=True)
+
+            time_positions = test_reader.pre_time_positions.values
+            deflations = test_reader.deflation.values
+            print len(time_positions)
+            print len(deflations)
+            print len(test_data)
+            print len(test_labels)
+            print "sum", sum(test_labels)
+
+            # flip label of some data which are under the conditions
+            for i in range(len(test_labels)):
+                time_position = time_positions[i]
+                deflation = deflations[i]
+                if 1 <= time_position <= 2 and deflation < -5:
+                    test_labels[i] = 1
+                else:
+                    test_labels[i] = 0
+            print len(test_labels)
+            print len(test_data)
+            print "sum", sum(test_labels)
 
             original_classified = model.predict(test_data, batch_size=batch_size, verbose=0)
             get_statistics(original_classified)

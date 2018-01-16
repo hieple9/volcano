@@ -48,7 +48,7 @@ for year in years:
     num_of_data_point = 101
     sliding_window = 10
     label_interval = 10
-    pre = 60
+    pre = 20
 
     radial_strains = []
     tangential_strains = []

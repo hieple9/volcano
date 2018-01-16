@@ -28,9 +28,9 @@ class RNNConfig():
 config = RNNConfig()
 
 with lstm_graph.as_default():
-    inputs = tf.placeholder(tf.float32, [None, config.num_steps, config.input_size])
-    targets = tf.placeholder(tf.float32, [None, config.output_size])
-    learning_rate = tf.placeholder(tf.float32, None)
+    inputs = tf.placeholder(tf.float32, [None, config.num_steps, config.input_size], name="input")
+    targets = tf.placeholder(tf.float32, [None, config.output_size], name="target")
+    learning_rate = tf.placeholder(tf.float32, None, name="learning_rate")
 
     def _create_one_cell():
         lstm_cell = tf.contrib.rnn.LSTMCell(config.lstm_size, state_is_tuple=True)
@@ -62,18 +62,21 @@ print "Data loading"
 print sensor
 training_reader = pd.read_csv(utils.get_early_diff_path(training_set))
 train_data, train_labels = utils.read_data(training_reader, sensor,  num_steps=5, dim=20, pre=True)
+print train_data.shape
+print train_labels.shape
 
 
 def generate_one_epoch(batch_size, num_steps):
     num_batches = int(len(train_data)) // batch_size
-    if batch_size * num_batches < len(train_data):
-        num_batches += 1
+    # if batch_size * num_batches < len(train_data):
+    #     num_batches += 1
 
     batch_indices = range(num_batches)
     random.shuffle(batch_indices)
     for j in batch_indices:
         batch_X = train_data[j * batch_size: (j + 1) * batch_size]
-        batch_y = train_labels[j * batch_size: (j + 1) * batch_size]
+        print batch_X.shape
+        batch_y = train_labels[j * batch_size: (j + 1) * batch_size].reshape(batch_size, config.output_size)
         assert set(map(len, batch_X)) == {num_steps}
         yield batch_X, batch_y
 

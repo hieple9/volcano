@@ -16,48 +16,23 @@ test_sets = ['test_60_explosion']
 run_test = False
 # sensors = ['tangential_strain', 'maximum_amplitude', 'radial_strain', 'energy']
 sensors = ['tangential_strain']
-batch_size = 128
+batch_size = 1000
 filters = 128
 kernel_size = 5
 epochs = 10
-class_weight = 6
+class_weight = 15
 
 for sensor in sensors:
     print sensor
     training_reader = pd.read_csv(get_early_diff_path(training_set))
+    print len(training_reader)
+    training_reader = training_reader[training_reader.current_labels == 0]
+    print len(training_reader)
     train_data, train_labels = read_data(training_reader, sensor, pre=True)
     dim = train_data[0].shape
 
     # Create the model
     model = Sequential()
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
-    model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
-    # # model.add(BatchNormalization(axis=1))
-    model.add(Activation('relu'))
-
     model.add(Conv1D(filters=filters, kernel_size=kernel_size, input_shape=dim))
     # # model.add(BatchNormalization(axis=1))
     model.add(Activation('relu'))
