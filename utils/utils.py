@@ -4,6 +4,7 @@ from sklearn.metrics import f1_score, confusion_matrix
 from random import random, choice
 import itertools
 import scipy as sp
+import random
 # import matplotlib as mpl
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -13,18 +14,22 @@ Functions for reading file
 """
 
 
+# raw data for recognition
 def get_raw_path(file_name):
     return "../processed_data/exact/raw/%s.csv" % file_name
 
 
+# First-order difference for recognition
 def get_diff_path(file_name):
     return "../processed_data/exact/diff/%s.csv" % file_name
 
 
+# First_order difference for forecasting
 def get_early_diff_path(file_name):
     return "../processed_data/pre/diff/%s.csv" % file_name
 
 
+# Combine labels into unique label
 def combine_labels(pre, current):
     if pre == current:
         return pre
@@ -35,6 +40,7 @@ def combine_labels(pre, current):
             return 3
 
 
+# Return labels by combining labels from current and future time
 def read_data2(file_reader, sensor=None, multiclass=False, exclude=None, dim=100, pre=False):
     """
     Return the data of a specific sensor, if sensor is None, return all sensors
@@ -54,8 +60,8 @@ def read_data2(file_reader, sensor=None, multiclass=False, exclude=None, dim=100
         else:
             labels = file_reader.label.values
 
-    print "Total", len(labels)
-    print "Class 1", sum(labels)
+    print("Total", len(labels))
+    print("Class 1", sum(labels))
     if sensor is None:
         energies = np.array([np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.energy])
         maximum_amplitudes = np.array(
@@ -65,7 +71,8 @@ def read_data2(file_reader, sensor=None, multiclass=False, exclude=None, dim=100
         tangential_strains = np.array(
             [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.tangential_strain])
 
-        pre_energies = np.array([np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.pre_energy])
+        pre_energies = np.array(
+            [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.pre_energy])
         pre_maximum_amplitudes = np.array(
             [np.fromstring(x, dtype=float, sep=',').reshape(dim, 1) for x in file_reader.pre_maximum_amplitude])
         pre_radial_strains = np.array(
@@ -90,15 +97,19 @@ def read_data2(file_reader, sensor=None, multiclass=False, exclude=None, dim=100
                 new_dim59.append(c)
         return np.array(new_dim100), np.array(new_labels), np.array(new_dim59)
 
-
-def read_data(file_reader, sensor=None, multiclass=False, exclude=None, num_steps=1, dim=100, pre=False):
+# [64.25, 64.49, 64.68, 65.2, 65.56, 65.9, 65.38, 66.87, 67.89, 69.29]
+# [67.0, 67.34, 68.16, 68.0, 67.59, 67.93, 67.98, 66.89, 67.22, 63.95]
+def read_data(file_reader, sensor=None, multiclass=False, exclude=None, num_steps=100, dim=1, pre=False):
     """
     Return the data of a specific sensor, if sensor is None, return all sensors
     """
     # file_reader = f0ile_reader.sample(frac=1).reset_index(drop=True)
 
     if pre:
-        labels = file_reader.pre_labels.values
+        if multiclass:
+            labels = file_reader.pre_time_positions.values
+        else:
+            labels = file_reader.pre_labels.values
         """
         Modify
         """
@@ -114,12 +125,13 @@ def read_data(file_reader, sensor=None, multiclass=False, exclude=None, num_step
                 file_reader = file_reader[~file_reader["time_positions"].isin(exclude)]
             labels = file_reader.time_positions.values
         else:
-            labels = file_reader.label.values
+            labels = file_reader.current_labels.values
 
-    print "Total", len(labels)
-    print "Class 1", sum(labels)
+    print("Total", len(labels))
+    print("Class 1", sum(labels))
     if sensor is None:
-        energies = np.array([np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.energy])
+        energies = np.array(
+            [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.energy])
         maximum_amplitudes = np.array(
             [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.maximum_amplitude])
         radial_strains = np.array(
@@ -127,10 +139,11 @@ def read_data(file_reader, sensor=None, multiclass=False, exclude=None, num_step
         tangential_strains = np.array(
             [np.fromstring(x, dtype=float, sep=',').reshape(num_steps, dim) for x in file_reader.tangential_strain])
 
-        return energies, maximum_amplitudes, radial_strains, tangential_strains, labels
+        return energies, maximum_amplitudes, radial_strains, tangential_strains, labels.reshape(len(labels), 1)
     else:
         return np.array(
-            [np.fromstring(e, dtype=float, sep=',').reshape(num_steps, dim) for e in file_reader[sensor]]), labels
+            [np.fromstring(e, dtype=float, sep=',').reshape(num_steps, dim) for e in
+             file_reader[sensor]]), labels.reshape(len(labels), 1)
 
 
 """
@@ -158,8 +171,8 @@ def date_parse(date):
                 return pd.datetime.strptime(date, '%Y/%m/%d %H:%M')
             elif len(year_format) < 4:
                 return pd.datetime.strptime(date, '%y/%m/%d %H:%M')
-    print "ERROR in converting time!"
-    print date
+    print("ERROR in converting time!")
+    print(date)
     return None
 
 
@@ -193,21 +206,23 @@ def check_number_eruption(start, end, eruptions):
 # Return the position of the explosion (minutes/10) counting from the start of the time series
 # Return 0 if no explosion
 def get_eruption_time(start, end, eruptions, interval):
-    second_to_minute = 60
-    ten_minutes_interval = interval * second_to_minute
+    minute_to_second = 60
+    interval_time = interval * minute_to_second
     for eruption in eruptions:
         if eruption > end:
             return 0, 0
-        if start <= eruption <= end:
-            return ((eruption - start).seconds - 1) / ten_minutes_interval + 1, eruption
+        if start < eruption <= end:
+            return ((eruption - start).seconds - 1) / interval_time + 1, eruption
     return 0, 0
 
 
-# Parameter "pre" is the number of minutes of pre30-pattern
+# Parameter "pre" is the number of minutes of pre-pattern
 def get_pre_eruption_time(start, end, eruptions, interval, pre):
     eruption_location, eruption_time = get_eruption_time(start, end, eruptions, interval)
-    pre_eruption_location, pre_eruption_time = get_eruption_time(end, end + np.timedelta64(pre, 'm'), eruptions, interval)
+    pre_eruption_location, pre_eruption_time = get_eruption_time(end, end + np.timedelta64(pre, 'm'), eruptions,
+                                                                 interval)
     return eruption_location, eruption_time, pre_eruption_location, pre_eruption_time
+
 
 """
 Pre process the sequence
@@ -250,6 +265,10 @@ def is_invalid_data(values):
     return False
 
 
+# Convert to one-hot encoding
+def to_categorical(labels):
+    pass
+
 """
 Class processing
 """
@@ -270,11 +289,11 @@ def find_best_threshold(ground_truth, prediction):
     f_score = f1_score(ground_truth, obtained_class, average=None)
     class_details = obtained_class
     best_score = np.average(f_score)
-    print "normal score threshold 0.5", best_score
+    # print "normal score threshold 0.5", best_score
     # get_score_and_confusion_matrix(ground_truth, obtained_class)
 
     # find the threshold
-    thresholds = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    thresholds = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
     for threshold in thresholds:
         # print threshold
         obtained_class = [get_class(x, threshold) for x in prediction]
@@ -284,38 +303,103 @@ def find_best_threshold(ground_truth, prediction):
         if best_score < f_avg:
             class_details = obtained_class
             best_threshold = threshold
-    print "best_threshold", best_threshold
-    get_score_and_confusion_matrix(ground_truth, class_details)
+    print("best_threshold", best_threshold)
+    # get_score_and_confusion_matrix(ground_truth, class_details)
     return best_threshold
 
 
 def get_score_and_confusion_matrix(test_labels, prediction):
     f_score = f1_score(test_labels, prediction, average=None)
-    print "f_score", f_score
-    print "f_score AVG", sp.average(f_score)
+    print("f_score", f_score)
+    print("f_score AVG", sp.average(f_score))
     confusion = confusion_matrix(test_labels, prediction)
-    print "confusion matrix"
-    print confusion
+    print("confusion matrix")
+    print(confusion)
     return f_score, confusion
 
 
+class State:
+    def __init__(self):
+        pass
+    eruption = 'eruption'
+    critical = 'critical'
+    warning = 'warning'
+    pre_eruption = 'pre_eruption'
+    non_eruption = 'non_eruption'
+
+
+def get_state(prediction_proba):
+    if prediction_proba < 0.3:
+        return State.non_eruption
+    elif prediction_proba < 0.5:
+        return State.pre_eruption
+    elif prediction_proba < 0.8:
+        return State.warning
+    else:
+        return State.critical
+
+
 """
-Negative sampling training
+Sampling training
 """
 
 
-def sample_imbalanced_data(data, labels, batch_size):
-    # create a sample with ratio 1:3
-    batch_data = []
-    batch_label = []
-    while 1:
-        for i in range(batch_size):
-            sample_label = 0 if random() > 0.75 else 1
-            chosen_index = choice([index for index, value in enumerate(labels) if value == sample_label])
-            batch_data.append(data[chosen_index])
-            batch_label.append(labels[chosen_index])
-        yield np.array(batch_data), np.array(batch_label)
+# Negative sampling
+def sample_imbalanced_data(data, labels, batch_size, positive_ratio=0.3):
+    # create a sample with ratio by default 0.25
+    num_batches = int(len(data)) // batch_size
+    if batch_size * num_batches < len(data):
+        num_batches += 1
 
+    batch_indices = range(num_batches)
+    for _ in batch_indices:
+
+        positive_indices = np.where(labels == 1)[0]
+        negative_indices = np.where(labels == 0)[0]
+
+        n_positive = int(batch_size * positive_ratio)
+        n_negative = batch_size - n_positive
+
+        positive_index_sample = np.random.choice(positive_indices, size=n_positive)
+        negative_index_sample = np.random.choice(negative_indices, size=n_negative)
+        index_sample = np.concatenate((positive_index_sample, negative_index_sample))
+        np.random.shuffle(index_sample)
+
+        yield data[index_sample], labels[index_sample]
+
+
+# Full sampling
+def generate_one_epoch(data, labels, batch_size, shuffle=True):
+    num_batches = int(len(data)) // batch_size
+    if batch_size * num_batches < len(data):
+        num_batches += 1
+
+    batch_indices = range(num_batches)
+    if shuffle:
+        random.shuffle(batch_indices)
+    for j in batch_indices:
+        batch_x = data[j * batch_size: (j + 1) * batch_size]
+        batch_y = labels[j * batch_size: (j + 1) * batch_size]
+        # batch_y = batch_y.reshape(len(batch_y), len(batch_y[0]))
+        # assert set(map(len, batch_x)) == {num_steps}
+        yield batch_x, batch_y
+
+
+def generate_one_epoch2(data1, data2, labels, batch_size, shuffle=True):
+    num_batches = int(len(data1)) // batch_size
+    if batch_size * num_batches < len(data1):
+        num_batches += 1
+
+    batch_indices = range(num_batches)
+    if shuffle:
+        random.shuffle(batch_indices)
+    for j in batch_indices:
+        batch_x1 = data1[j * batch_size: (j + 1) * batch_size]
+        batch_x2 = data2[j * batch_size: (j + 1) * batch_size]
+        batch_y = labels[j * batch_size: (j + 1) * batch_size]
+        # batch_y = batch_y.reshape(len(batch_y), len(batch_y[0]))
+        # assert set(map(len, batch_x)) == {num_steps}
+        yield batch_x1, batch_x2, batch_y
 
 """
 PLot confusion matrix
@@ -355,6 +439,7 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
 
+
 """
 Statistics
 """
@@ -364,10 +449,10 @@ def get_statistics(data):
     # print "min", sp.amin(data)
     # print "max", sp.amax(data)
     median = sp.median(data)
-    print "median", median
+    print("median", median)
     mean = sp.mean(data)
-    print "mean", mean
+    print("mean", mean)
     std = sp.std(data)
-    print "std", std
+    print("std", std)
     # print "var", sp.var(data)
     return median, mean, std

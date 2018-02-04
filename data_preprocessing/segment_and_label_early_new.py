@@ -32,7 +32,7 @@ for num_of_data_point in ts_len:
             energy_data.time = pd.Series(data=np.asarray([date_parse(str(x)) for x in energy_data.time]),
                                          index=energy_data.index)
             new_strain_data.time = pd.Series(data=np.asarray([date_parse(str(x)) for x in new_strain_data.time]),
-                                         index=new_strain_data.index)
+                                             index=new_strain_data.index)
 
             strain_len = len(strain_data)
             print 'strain_len', strain_len
@@ -114,24 +114,37 @@ for num_of_data_point in ts_len:
                 pre_energy = energy_data.iloc[energy_index + pre:energy_index + num_of_data_point + pre]
                 pre_new_strain = new_strain_data.iloc[new_strain_index + pre:new_strain_index + num_of_data_point + pre]
 
-                if not is_missing_point(strain.time.values) and\
-                        not is_missing_point(energy.time.values) and\
-                        not is_invalid_data(strain['tangential_strain'].values) and\
-                        not is_invalid_data(strain['radial_strain'].values) and\
-                        not is_invalid_data(energy['maximum_amplitude'].values) and\
-                        not is_invalid_data(energy['energy'].values) and\
-                        not is_strain_noise(strain['tangential_strain'].values) and not is_strain_noise(strain['radial_strain'].values)\
-                        and not is_missing_point(pre_strain.time.values) and not is_missing_point(
-                    pre_energy.time.values) and not is_invalid_data(pre_strain['tangential_strain'].values) and not is_invalid_data(
-                    pre_strain['radial_strain'].values) and not is_invalid_data(
-                    pre_energy['maximum_amplitude'].values) and not is_invalid_data(
-                    pre_energy['energy'].values) and not is_strain_noise(
-                    pre_strain['tangential_strain'].values) and not is_strain_noise(pre_strain['radial_strain'].values):
+                if not is_missing_point(strain.time.values) and \
+                        not is_missing_point(energy.time.values) and \
+                        not is_missing_point(new_strain.time.values) and \
+                        not is_invalid_data(strain['tangential_strain'].values) and \
+                        not is_invalid_data(strain['radial_strain'].values) and \
+                        not is_invalid_data(energy['maximum_amplitude'].values) and \
+                        not is_invalid_data(energy['energy'].values) and \
+                        not is_invalid_data(new_strain['tangential_strain'].values) and \
+                        not is_invalid_data(new_strain['radial_strain'].values) and \
+                        not is_strain_noise(strain['tangential_strain'].values) and \
+                        not is_strain_noise(strain['radial_strain'].values) and \
+                        not is_strain_noise(new_strain['tangential_strain'].values) and \
+                        not is_strain_noise(new_strain['radial_strain'].values) and \
+                        not is_missing_point(pre_strain.time.values) and \
+                        not is_missing_point(pre_energy.time.values) and \
+                        not is_missing_point(pre_new_strain.time.values) and \
+                        not is_invalid_data(pre_strain['tangential_strain'].values) and \
+                        not is_invalid_data(pre_strain['radial_strain'].values) and \
+                        not is_invalid_data(pre_energy['maximum_amplitude'].values) and \
+                        not is_invalid_data(pre_energy['energy'].values) and \
+                        not is_invalid_data(pre_new_strain['tangential_strain'].values) and \
+                        not is_invalid_data(pre_new_strain['radial_strain'].values) and \
+                        not is_strain_noise(pre_strain['tangential_strain'].values) and \
+                        not is_strain_noise(pre_strain['radial_strain'].values) and \
+                        not is_strain_noise(pre_new_strain['tangential_strain'].values) and \
+                        not is_strain_noise(pre_new_strain['radial_strain'].values):
 
                     tail_time = head_time + np.timedelta64(num_of_data_point - 1, 'm')
                     time_intervals.append(str(head_time) + "," + str(tail_time))
                     # old interval (num_of_data_point - 1) / label_interval
-                    explosion_position, explosion_time, pre_explosion_position, pre_explosion_time =\
+                    explosion_position, explosion_time, pre_explosion_position, pre_explosion_time = \
                         get_pre_eruption_time(head_time, tail_time, explosion, label_interval, pre)
                     number_explosion = check_number_eruption(head_time, tail_time, explosion)
                     explosion_counter_per_sequence[number_explosion] += 1
@@ -155,11 +168,20 @@ for num_of_data_point in ts_len:
                     tangential_strains.append(','.join([str(x) for x in diff(strain['tangential_strain'].values)]))
                     energies.append(','.join([str(x) for x in diff(energy['energy'].values)]))
                     maximum_amplitudes.append(','.join([str(x) for x in diff(energy['maximum_amplitude'].values)]))
+                    new_radial_strains.append(','.join([str(x) for x in diff(new_strain['radial_strain'].values)]))
+                    new_tangential_strains.append(
+                        ','.join([str(x) for x in diff(new_strain['tangential_strain'].values)]))
 
                     pre_radial_strains.append(','.join([str(x) for x in diff(pre_strain['radial_strain'].values)]))
-                    pre_tangential_strains.append(','.join([str(x) for x in diff(pre_strain['tangential_strain'].values)]))
+                    pre_tangential_strains.append(
+                        ','.join([str(x) for x in diff(pre_strain['tangential_strain'].values)]))
                     pre_energies.append(','.join([str(x) for x in diff(pre_energy['energy'].values)]))
-                    pre_maximum_amplitudes.append(','.join([str(x) for x in diff(pre_energy['maximum_amplitude'].values)]))
+                    pre_maximum_amplitudes.append(
+                        ','.join([str(x) for x in diff(pre_energy['maximum_amplitude'].values)]))
+                    pre_new_radial_strains.append(
+                        ','.join([str(x) for x in diff(pre_new_strain['radial_strain'].values)]))
+                    pre_new_tangential_strains.append(
+                        ','.join([str(x) for x in diff(pre_new_strain['tangential_strain'].values)]))
 
                     deflation.append(0 if pre_explosion_time == 0 else deflation_db.get(pre_explosion_time))
 
@@ -168,23 +190,30 @@ for num_of_data_point in ts_len:
                 # check to make sure that the with the head time exists
                 strain_index = strain_data[strain_data['time'] == head_time].index.tolist()
                 energy_index = energy_data[energy_data['time'] == head_time].index.tolist()
-                while len(strain_index) == 0 or len(energy_index) == 0:
+                new_strain_index = new_strain_data[new_strain_data['time'] == head_time].index.tolist()
+
+                while len(strain_index) == 0 or len(energy_index) == 0 or len(new_strain_index) == 0:
                     head_time += np.timedelta64(1, 'm')
                     strain_index = strain_data[strain_data['time'] == head_time].index.tolist()
                     energy_index = energy_data[energy_data['time'] == head_time].index.tolist()
+                    new_strain_index = new_strain_data[new_strain_data['time'] == head_time].index.tolist()
 
             df = pd.DataFrame(
-                {"time_interval": time_intervals, "tangential_strain": tangential_strains, "radial_strain": radial_strains,
+                {"time_interval": time_intervals, "tangential_strain": tangential_strains,
+                 "radial_strain": radial_strains, "new_tangential_strain": new_tangential_strains,
+                 "new_radial_strain": new_radial_strains,
                  "energy": energies, "maximum_amplitude": maximum_amplitudes,
                  "pre_tangential_strain": pre_tangential_strains, "pre_radial_strain": pre_radial_strains,
+                 "pre_new_tangential_strain": pre_new_tangential_strains,
+                 "pre_new_radial_strain": pre_new_radial_strains,
                  "pre_energy": pre_energies, "pre_maximum_amplitude": pre_maximum_amplitudes,
                  "current_labels": current_labels,
                  "current_time_positions": current_time_positions, "pre_labels": pre_labels,
                  "pre_time_positions": pre_time_positions, "deflation": deflation})
-            df.to_csv("../processed_data/pre/diff/%s_%s_%s_sw%s_%s.csv" % (year, num_of_data_point, pre,
-                                                                         sliding_window, volcano_status), index=None)
+            df.to_csv("../processed_data/pre/diff/%s_%s_%s_sw%s_%s_new.csv" % (year, num_of_data_point, pre,
+                                                                           sliding_window, volcano_status), index=None)
             print "total", len(time_intervals)
             print "explosion_counter_per_sequence", explosion_counter_per_sequence
             print "label_counter", label_counter
 
-        # explosion_counter_per_sequence Counter({0: 366627, 1: 37952, 2: 6839, 3: 1228, 4: 212, 5: 37, 6: 4, 7: 1})
+            # explosion_counter_per_sequence Counter({0: 366627, 1: 37952, 2: 6839, 3: 1228, 4: 212, 5: 37, 6: 4, 7: 1})

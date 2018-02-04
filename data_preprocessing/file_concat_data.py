@@ -1,8 +1,8 @@
 import pandas as pd
 
-years = ['2009', '2010', '2011', '2012', '2013', '2014']
+years = ['2009', '2010', '2011', '2012', '2013']
 
-name = '2009_2014'
+name = '2009_2013'
 all_data = []
 # for test and training
 for year in years:

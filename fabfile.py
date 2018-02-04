@@ -2,7 +2,7 @@ from fabric.api import *
 from fabric.contrib.project import rsync_project
 import os
 
-env.hosts = ['titanx', 'gtx']
+env.hosts = ['titanx', 'titanti', 'gtx']
 env.user = 'hiep'
 env.use_ssh_config = True
 ROOT_DIR = os.path.dirname(__file__)

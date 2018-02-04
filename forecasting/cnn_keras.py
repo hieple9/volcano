@@ -10,23 +10,23 @@ from utils.utils import *
 np.random.seed(7)
 
 start_time = time.time()
-training_set = 'training_60_explosion'
-test_sets = ['test_60_explosion']
+training_set = 'training_101_60_explosion'
+test_sets = ['validation_101_60_explosion']
 run_test = True
 # sensors = ['tangential_strain', 'maximum_amplitude', 'radial_strain', 'energy']
 sensors = ['tangential_strain']
 batch_size = 1000
 filters = 128
 kernel_size = 5
-epochs = 5
-class_weight = 15
+epochs = 10
+class_weight = 5
 
 for sensor in sensors:
     print sensor
     training_reader = pd.read_csv(get_early_diff_path(training_set))
-    print len(training_reader)
-    training_reader = training_reader[training_reader.current_labels == 0]
-    print len(training_reader)
+    # print len(training_reader)
+    # training_reader = training_reader[training_reader.current_labels == 0]
+    # print len(training_reader)
     train_data, train_labels = read_data(training_reader, sensor, pre=True)
     dim = train_data[0].shape
 
@@ -51,8 +51,8 @@ for sensor in sensors:
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling1D(2, 2))
+    # model.add(Dropout(0.5))
+    # model.add(MaxPooling1D(2, 2))
 
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
@@ -72,8 +72,8 @@ for sensor in sensors:
     model.add(Conv1D(filters=filters, kernel_size=kernel_size))
     # model.add(BatchNormalization(axis=1))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(MaxPooling1D(2, 2))
+    # model.add(Dropout(0.5))
+    # model.add(MaxPooling1D(2, 2))
 
     model.add(Flatten())
     model.add(Dense(32, activation='relu'))
@@ -141,9 +141,9 @@ for sensor in sensors:
         for test in test_sets:
             print test
             test_reader = pd.read_csv(get_early_diff_path(test))
-            print len(test_reader)
-            test_reader = test_reader[test_reader.current_labels == 0]
-            print len(test_reader)
+            # print len(test_reader)
+            # test_reader = test_reader[test_reader.current_labels == 0]
+            # print len(test_reader)
             test_data, test_labels = read_data(test_reader, sensor, pre=True)
 
             time_positions = test_reader.pre_time_positions.values
@@ -231,6 +231,7 @@ for sensor in sensors:
             classified = [get_class(x, 0.9) for x in original_classified]
             get_score_and_confusion_matrix(test_labels, classified)
 
+            """
             high_possible_index = [i for i, x in enumerate(original_classified) if x >= 0.9]
             # high_possible_values = [x for x in original_classified if x >= 0.9]
             print "high_possible_index", high_possible_index
@@ -238,5 +239,6 @@ for sensor in sensors:
             print [test_time_positions[i] for i in high_possible_index]
             print [round(test_deflation[i], 2) for i in high_possible_index]
             # visual = [test_data[i] for i in high_possible_index]
+            """
 
 print("--- %s seconds ---" % (time.time() - start_time))

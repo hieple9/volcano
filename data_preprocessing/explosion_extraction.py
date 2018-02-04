@@ -1,7 +1,7 @@
 from utils.utils import *
 import matplotlib.pyplot as plt
 
-explosion = pd.read_excel("../data/explosion/List summary.xlsx")
+explosion = pd.read_excel("../data/eruption/List summary.xlsx")
 explosion = explosion[(explosion.Type == 'Explosive') | (explosion.Type == 'Explosive (M)')]
 explosion['time'] = pd.to_datetime(explosion['time'])
 
@@ -16,6 +16,8 @@ for year in years:
         this_year.append(len(a))
     print len(explosion[(explosion.time.dt.year == year)]), this_year
     all.append(this_year)
+
+print all
 
 # Four axes, returned as a 2-d array
 f, axarr = plt.subplots(4, 2)
@@ -71,4 +73,4 @@ plt.setp([a.get_xticklabels() for a in axarr[1, :]], visible=False)
 plt.setp([a.get_xticklabels() for a in axarr[2, :]], visible=False)
 plt.setp([a.get_yticklabels() for a in axarr[:, 1]], visible=False)
 
-plt.show()
+# plt.show()
